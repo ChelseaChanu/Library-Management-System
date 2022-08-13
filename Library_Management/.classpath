@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="image"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="RSTableMetro.jar"/>
+	<classpathentry kind="lib" path="RSCalendar.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Admin/Downloads/1515878801_RojeruSan.parte1.jar/RojeruSan.parte1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Admin/Downloads/mysql-connector-java-8.0.29/mysql-connector-java-8.0.29/mysql-connector-java-8.0.29.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Admin/Downloads/1515879047_RSCalendar/RSCalendar.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Admin/Downloads/JFreeChart/jcommon-1.0.23.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Admin/Downloads/JFreeChart/jfreechart-1.0.19.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
