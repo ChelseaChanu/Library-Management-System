@@ -1,38 +1,29 @@
 package jFrame;
 
-import java.awt.EventQueue;
-
-import javax.swing.JFrame;
-import javax.swing.JPanel;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import java.awt.Color;
-import java.awt.Dimension;
-
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-
-import java.awt.Font;
-import javax.swing.SwingConstants;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import javax.swing.border.MatteBorder;
+import java.awt.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-
-import javax.swing.ImageIcon;
-import javax.swing.JTextField;
-import javax.swing.border.MatteBorder;
-import rojeru_san.componentes.RSDateChooser;
-import javax.swing.JButton;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-
-import java.util.Date;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import com.toedter.calendar.JDateChooser;
 
 public class IssueBooks extends JFrame {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
 	private JTextField txtBookId;
 	private JTextField txtBookName;
@@ -42,10 +33,12 @@ public class IssueBooks extends JFrame {
 	private JTextField txtCourse;
 	private JTextField txtBranch;
 	private JTextField txtStuName;
-	private JTextField txtBookid;
-	private JTextField txtStuid;
-	private Object date_issue;
-	private Object date_due;
+	private JLabel lbl_bookError;
+	private JLabel lbl_stuError;
+	private JTextField txt_bookId;
+	private JTextField txt_stuId;
+	private JTextField txtIssueDate;
+	private JTextField txtDueDate;
 
 	/**
 	 * Launch the application.
@@ -67,7 +60,7 @@ public class IssueBooks extends JFrame {
 
 	//fetch book details
 	public void getBookDetails() {
-		int bookId = Integer.parseInt(txtBookid.getText());
+		int bookId = Integer.parseInt(txt_bookId.getText());
 		
 		try {
 			Connection con = DBConnection.getConnection();
@@ -75,11 +68,14 @@ public class IssueBooks extends JFrame {
 			pst.setInt(1, bookId);
 			ResultSet rs = pst.executeQuery();
 			
-			while(rs.next()) {
+			if(rs.next()) {
 				txtBookId.setText(rs.getString("book_Id"));
 				txtBookName.setText(rs.getString("book_name"));
 				txtAuthor.setText(rs.getString("author"));
 				txtQuan.setText(rs.getString("quantity"));	
+			}
+			else {
+				lbl_bookError.setText("Invalid Book Id");
 			}
 		}
 		catch(Exception e) {
@@ -89,7 +85,7 @@ public class IssueBooks extends JFrame {
 	
 	//fetch book details
 		public void getStudentDetails() {
-			int studentId = Integer.parseInt(txtStuid.getText());
+			int studentId = Integer.parseInt(txt_stuId.getText());
 			
 			try {
 				Connection con = DBConnection.getConnection();
@@ -97,11 +93,14 @@ public class IssueBooks extends JFrame {
 				pst.setInt(1, studentId);
 				ResultSet rs = pst.executeQuery();
 				
-				while(rs.next()) {
+				if(rs.next()) {
 					txtStuId.setText(rs.getString("student_Id"));
 					txtStuName.setText(rs.getString("name"));
 					txtCourse.setText(rs.getString("course"));
 					txtBranch.setText(rs.getString("branch"));	
+				}
+				else {
+					lbl_stuError.setText("Invalid Student Id");
 				}
 			}
 			catch(Exception e) {
@@ -109,32 +108,33 @@ public class IssueBooks extends JFrame {
 			}
 		}
 		
-		//insert issue book details into databse
-		public boolean issueBook() {
+		//insert issue book details into database
+		public boolean issueBook() throws ParseException{
 			boolean isIssued = false;
-			int bookId = Integer.parseInt(txtBookId.getText());
-			int studentId = Integer.parseInt(txtStuId.getText());
+			int bookId = Integer.parseInt(txt_bookId.getText());
+			int studentId = Integer.parseInt(txt_stuId.getText());
 			String bookName = txtBookName.getText();
 			String studentName = txtStuName.getText();
 			
-			Date uIssueDate = ((RSDateChooser) date_issue).getDatoFecha(); 
-			Date uDueDate = ((RSDateChooser) date_due).getDatoFecha();
-			Long l1 = uIssueDate.getTime();
-			Long l2 = uDueDate.getTime();
-			java.sql.Date sIssueDate = new java.sql.Date(l1);
-			java.sql.Date sDueDate = new java.sql.Date(l2);
+			SimpleDateFormat formatDate = new SimpleDateFormat("dd/MM/yyyy");
+			
+			java.util.Date issueDate = formatDate.parse(txtIssueDate.getText());
+			java.sql.Date issue_Date = new java.sql.Date(issueDate.getTime());
+			
+			java.util.Date dueDate = formatDate.parse(txtDueDate.getText());
+			java.sql.Date due_Date = new java.sql.Date(dueDate.getTime());
 			
 			try {
 				Connection con = DBConnection.getConnection();
-				String sql = "insert into issue_book(book_Id,book_name,student_Id,student_name,issue_book,due_date,status) values(?,?,?,?,?,?,?)";
+				String sql = "insert into issue_book(book_id,book_name,student_id,student_name,issue_date,due_date,status) values(?,?,?,?,?,?,?)";
 				
 				PreparedStatement pst = con.prepareStatement(sql);
 				pst.setInt(1, bookId);
 				pst.setString(2, bookName);
 				pst.setInt(3, studentId);
 				pst.setString(4, studentName);
-				pst.setDate(5, sIssueDate);
-				pst.setDate(6, sDueDate);
+				pst.setDate(5, issue_Date);
+				pst.setDate(6, due_Date);
 				pst.setString(7, "pending");
 				
 				int rowCount = pst.executeUpdate();
@@ -153,7 +153,7 @@ public class IssueBooks extends JFrame {
 		
 		//updating book count
 		public void updateBookCount() {
-			int bookId = Integer.parseInt(txtBookId.getText());
+			int bookId = Integer.parseInt(txt_bookId.getText());
 			
 			try {
 				Connection con = DBConnection.getConnection();
@@ -178,13 +178,13 @@ public class IssueBooks extends JFrame {
 		
 		//check if book is issued to a particular student
 		public boolean isAlreadyIssued() {
-			boolean isIssued = false;
-			int bookId = Integer.parseInt(txtBookId.getText());
-			int studentId = Integer.parseInt(txtStuId.getText());
+			boolean isAlreadyIssued = false;
+			int bookId = Integer.parseInt(txt_bookId.getText());
+			int studentId = Integer.parseInt(txt_stuId.getText());
 			
 			try {
 				Connection con = DBConnection.getConnection();
-				String sql = "select * from issue_book where book_Id = ? and student_Id = ? and status = ?";
+				String sql = "select * from issue_book where book_id = ? and student_id = ? and status = ?";
 				
 				PreparedStatement pst = con.prepareStatement(sql);
 				pst.setInt(1, bookId);
@@ -194,16 +194,16 @@ public class IssueBooks extends JFrame {
 				ResultSet rs = pst.executeQuery(); 
 				
 				if(rs.next()) {
-					isIssued = true;
+					isAlreadyIssued = true;
 				}
 				else
-					isIssued = false;
+					isAlreadyIssued = false;
 			}
 			catch(Exception e) {
 				e.printStackTrace();
 			}
 			
-			return isIssued;
+			return isAlreadyIssued;
 		}
 	/**
 	 * Create the frame.
@@ -227,7 +227,6 @@ public class IssueBooks extends JFrame {
 		
 		JPanel panel_1_1 = new JPanel();
 		panel_1_1.addMouseListener(new MouseAdapter() {
-			@Override
 			public void mouseClicked(MouseEvent e) {
 				HomePage home = new HomePage();
 				home.setVisible(true);
@@ -240,6 +239,14 @@ public class IssueBooks extends JFrame {
 		panel.add(panel_1_1);
 		
 		JLabel lblNewLabel = new JLabel("  BACK");
+		lblNewLabel.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				HomePage home = new HomePage();
+				home.setVisible(true);
+				dispose();
+			}
+		});
 		lblNewLabel.setIcon(new ImageIcon(IssueBooks.class.getResource("/AddNewBookIcons/AddNewBookIcons/icons8_Rewind_48px.png")));
 		lblNewLabel.setForeground(Color.WHITE);
 		lblNewLabel.setFont(new Font("Verdana", Font.PLAIN, 15));
@@ -324,6 +331,13 @@ public class IssueBooks extends JFrame {
 		txtQuan.setBounds(168, 496, 201, 33);
 		panel.add(txtQuan);
 		
+		JLabel lbl_bookError = new JLabel("");
+		lbl_bookError.setForeground(new Color(255, 255, 255));
+		lbl_bookError.setBackground(new Color(255, 255, 255));
+		lbl_bookError.setFont(new Font("Verdana", Font.PLAIN, 18));
+		lbl_bookError.setBounds(37, 620, 317, 23);
+		panel.add(lbl_bookError);
+		
 		JPanel panel_1 = new JPanel();
 		panel_1.setBorder(null);
 		panel_1.setBackground(new Color(102, 205, 170));
@@ -331,7 +345,7 @@ public class IssueBooks extends JFrame {
 		contentPane.add(panel_1);
 		panel_1.setLayout(null);
 		
-		JLabel lblNewLabel_2_1 = new JLabel("   Manage Books");
+		JLabel lblNewLabel_2_1 = new JLabel("   Manage Students");
 		lblNewLabel_2_1.setIcon(new ImageIcon(IssueBooks.class.getResource("/AddNewBookIcons/AddNewBookIcons/icons8_Student_Registration_100px_2.png")));
 		lblNewLabel_2_1.setHorizontalAlignment(SwingConstants.CENTER);
 		lblNewLabel_2_1.setForeground(Color.WHITE);
@@ -409,6 +423,12 @@ public class IssueBooks extends JFrame {
 		txtStuName.setBounds(157, 342, 201, 33);
 		panel_1.add(txtStuName);
 		
+		JLabel lbl_stuError = new JLabel("");
+		lbl_stuError.setForeground(new Color(255, 255, 255));
+		lbl_stuError.setFont(new Font("Verdana", Font.PLAIN, 18));
+		lbl_stuError.setBounds(27, 621, 317, 23);
+		panel_1.add(lbl_stuError);
+		
 		JPanel panel_2 = new JPanel();
 		panel_2.setBackground(new Color(255, 255, 255));
 		panel_2.setBorder(null);
@@ -443,22 +463,22 @@ public class IssueBooks extends JFrame {
 		panel_3_2.setBounds(94, 174, 307, 5);
 		panel_2.add(panel_3_2);
 		
-		txtBookid = new JTextField();
-		txtBookid.addFocusListener(new FocusAdapter() {
+		txt_bookId = new JTextField();
+		txt_bookId.addFocusListener(new FocusAdapter() {
 			@Override
 			public void focusLost(FocusEvent e) {
-				if(!txtBookid.getText().equals(""))
+				if(!txt_bookId.getText().equals(""))
 					getBookDetails();
 			}
 		});
-		txtBookid.setHorizontalAlignment(SwingConstants.CENTER);
-		txtBookid.setForeground(Color.BLACK);
-		txtBookid.setFont(new Font("Arial", Font.PLAIN, 18));
-		txtBookid.setColumns(10);
-		txtBookid.setBorder(new MatteBorder(0, 0, 3, 0, (Color) new Color(178, 34, 34)));
-		txtBookid.setBackground(new Color(255, 255, 255));
-		txtBookid.setBounds(182, 261, 239, 33);
-		panel_2.add(txtBookid);
+		txt_bookId.setHorizontalAlignment(SwingConstants.CENTER);
+		txt_bookId.setForeground(Color.BLACK);
+		txt_bookId.setFont(new Font("Arial", Font.PLAIN, 18));
+		txt_bookId.setColumns(10);
+		txt_bookId.setBorder(new MatteBorder(0, 0, 3, 0, (Color) new Color(178, 34, 34)));
+		txt_bookId.setBackground(new Color(255, 255, 255));
+		txt_bookId.setBounds(182, 261, 239, 33);
+		panel_2.add(txt_bookId);
 		
 		JLabel lblNewLabel_1_8 = new JLabel("Book Id :");
 		lblNewLabel_1_8.setForeground(new Color(178, 34, 34));
@@ -474,22 +494,22 @@ public class IssueBooks extends JFrame {
 		lblNewLabel_1_4_1.setBounds(52, 352, 120, 23);
 		panel_2.add(lblNewLabel_1_4_1);
 		
-		txtStuid = new JTextField();
-		txtStuid.addFocusListener(new FocusAdapter() {
+		txt_stuId = new JTextField();
+		txt_stuId.addFocusListener(new FocusAdapter() {
 			@Override
 			public void focusLost(FocusEvent e) {
-				if(!txtStuid.getText().equals(""))
+				if(!txt_stuId.getText().equals(""))
 					getStudentDetails();
 			}
 		});
-		txtStuid.setHorizontalAlignment(SwingConstants.CENTER);
-		txtStuid.setForeground(Color.BLACK);
-		txtStuid.setFont(new Font("Arial", Font.PLAIN, 18));
-		txtStuid.setColumns(10);
-		txtStuid.setBorder(new MatteBorder(0, 0, 3, 0, (Color) new Color(178, 34, 34)));
-		txtStuid.setBackground(Color.WHITE);
-		txtStuid.setBounds(182, 342, 239, 33);
-		panel_2.add(txtStuid);
+		txt_stuId.setHorizontalAlignment(SwingConstants.CENTER);
+		txt_stuId.setForeground(Color.BLACK);
+		txt_stuId.setFont(new Font("Arial", Font.PLAIN, 18));
+		txt_stuId.setColumns(10);
+		txt_stuId.setBorder(new MatteBorder(0, 0, 3, 0, (Color) new Color(178, 34, 34)));
+		txt_stuId.setBackground(Color.WHITE);
+		txt_stuId.setBounds(182, 342, 239, 33);
+		panel_2.add(txt_stuId);
 		
 		JLabel lblNewLabel_1_8_1 = new JLabel("Issue Date :");
 		lblNewLabel_1_8_1.setForeground(new Color(178, 34, 34));
@@ -503,43 +523,35 @@ public class IssueBooks extends JFrame {
 		lblNewLabel_1_8_2.setBounds(52, 538, 120, 23);
 		panel_2.add(lblNewLabel_1_8_2);
 		
-		RSDateChooser date_issue = new RSDateChooser();
-		date_issue.setPlaceholder("Select Issue Date...");
-		date_issue.setColorForeground(new Color(178, 34, 34));
-		date_issue.setColorButtonHover(new Color(178, 34, 34));
-		date_issue.setColorBackground(new Color(178, 34, 34));
-		date_issue.setBounds(181, 444, 240, 40);
-		panel_2.add(date_issue);
-		
-		RSDateChooser date_due = new RSDateChooser();
-		date_due.setPlaceholder("Select Due Date...");
-		date_due.setColorForeground(new Color(178, 34, 34));
-		date_due.setColorButtonHover(new Color(178, 34, 34));
-		date_due.setColorBackground(new Color(178, 34, 34));
-		date_due.setBounds(181, 521, 240, 40);
-		panel_2.add(date_due);
-		
 		JButton btnNewButton = new JButton("Issue Book");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if(txtQuan.getText().equals("")) {
+				if(txtQuan.getText().equals("0")) {
 					JOptionPane.showMessageDialog(null, "Book Is Not Available");
 				}
 				else {
 					if(isAlreadyIssued()==false) {
-						if(issueBook()==true) {
-							JOptionPane.showMessageDialog(null, "Book Issued Successfully");
-							updateBookCount();
+						try {
+							if(issueBook()==true) {
+								JOptionPane.showMessageDialog(null, "Book Issued Successfully");
+								updateBookCount();
+							}
+							else {
+								JOptionPane.showMessageDialog(null, "Book Issue Failure");
+							}
+						} catch (HeadlessException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						} catch (ParseException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
 						}
-						else {
-							JOptionPane.showMessageDialog(null, "Book Issue Failure");
-						}
-					}
-					else {
-						JOptionPane.showMessageDialog(null, "Student has already acquired the book");
-					}
 				}
+				else {
+					JOptionPane.showMessageDialog(null, "Student has already acquired the book");
 				}
+			}
+		}
 		});
 		btnNewButton.setForeground(new Color(255, 255, 255));
 		btnNewButton.setBorder(null);
@@ -547,5 +559,16 @@ public class IssueBooks extends JFrame {
 		btnNewButton.setFont(new Font("Verdana", Font.PLAIN, 18));
 		btnNewButton.setBounds(129, 639, 255, 40);
 		panel_2.add(btnNewButton);
+		
+		txtIssueDate = new JTextField();
+		txtIssueDate.setBounds(197, 446, 224, 38);
+		panel_2.add(txtIssueDate);
+		txtIssueDate.setColumns(10);
+		
+		txtDueDate = new JTextField();
+		txtDueDate.setColumns(10);
+		txtDueDate.setBounds(197, 523, 224, 38);
+		panel_2.add(txtDueDate);
+
 	}
 }
